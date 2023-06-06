@@ -5,7 +5,7 @@
 #SBATCH --time=02-00:00
 #SBATCH --mem=4000M
 #SBATCH --gpus-per-node=1
-#SBATCH --array=246-621
+#SBATCH --array=246-399
 
 module purge
 module load r/4.2.1
