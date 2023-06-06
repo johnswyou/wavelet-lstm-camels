@@ -2,12 +2,13 @@
 
 #SBATCH --job-name=wavelet_camels
 #SBATCH --ntasks=1
-#SBATCH --time=02-00:00
-#SBATCH --mem=4000M
+#SBATCH --time=00-16:00
+#SBATCH --mem=6000M
 #SBATCH --gpus-per-node=1
-#SBATCH --array=246-399
+#SBATCH --array=1-621
 
 module purge
+module load python/3.10
 module load r/4.2.1
 source /home/jswyou/projects/def-quiltyjo/jswyou/venv/bin/activate
 

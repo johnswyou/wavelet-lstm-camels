@@ -30,7 +30,7 @@ def create_directory_if_not_exists(directory_path):
         str: A message indicating whether the directory was created or if it already existed.
     """
     if not os.path.exists(directory_path):
-        os.mkdir(directory_path)
+        os.makedirs(directory_path, exist_ok=True)
         print(f"Directory {directory_path} created successfully")
     else:
         print(f"Directory {directory_path} already exists")

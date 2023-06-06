@@ -2,10 +2,10 @@
 
 #SBATCH --job-name=vanilla_camels
 #SBATCH --ntasks=1
-#SBATCH --time=07-00:00
-#SBATCH --mem=4000M
-#SBATCH --gpus-per-node=1
-#SBATCH --array=1-3
+#SBATCH --time=00-36:00
+#SBATCH --mem=32000M
+#SBATCH --gpus-per-node=v100l:1
+#SBATCH --array=1,3
 
 module purge
 module load r/4.2.1
