@@ -16,7 +16,7 @@ if __name__ == "__main__":
     kwag_ = vars(args_)
     leadtime_ = kwag_['leadtime']
 
-    with open('csv_filenames.txt', 'r') as file:
+    with open('final_filenames.txt', 'r') as file:
         csv_filenames = [line.rstrip() for line in file.readlines()]
 
     # -----------------
