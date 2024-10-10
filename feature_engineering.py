@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
-import pywt
+# import pywt
+from utils import load_pickle
 
 # class MODWTFeatureEngineer:
 #     """
@@ -186,7 +187,12 @@ class MODWTFeatureEngineer:
 
     def __init__(self, wavelet='db1', v_levels=1, w_levels=1):
         # Initialize wavelet
-        self.wavelet = pywt.Wavelet(wavelet)
+        # self.wavelet = pywt.Wavelet(wavelet)
+        self.scaling_dict = load_pickle("filters/scaling_dict.pkl")
+        self.wavelet_dict = load_pickle("filters/wavelet_dict.pkl")
+
+        self.scaling_filter = self.scaling_dict[wavelet]
+        self.wavelet_filter = self.wavelet_dict[wavelet]
         
         # Convert v_levels and w_levels to lists if they are integers
         if isinstance(v_levels, int):
@@ -212,15 +218,16 @@ class MODWTFeatureEngineer:
         self.max_level = max(self.v_levels + self.w_levels)
         
         # Length of the decomposition low-pass filter
-        self.L = len(self.wavelet.dec_lo)
+        # self.L = len(self.wavelet.rec_lo)
+        self.L = len(self.scaling_filter)
         
         # Calculate L_J for scaling and wavelet coefficients
         self.L_J_v = {J: (2**J - 1) * (self.L - 1) + 1 for J in self.v_levels}
         self.L_J_w = {J: (2**J - 1) * (self.L - 1) + 1 for J in self.w_levels}
         
         # Extract scaling (low-pass) and wavelet (high-pass) filters
-        self.scaling_filter = np.array(self.wavelet.dec_lo)
-        self.wavelet_filter = np.array(self.wavelet.dec_hi)
+        # self.scaling_filter = np.array(self.wavelet.rec_lo)
+        # self.wavelet_filter = np.array(self.wavelet.rec_hi)
 
     def modwt(self, signal):
         """
@@ -333,8 +340,8 @@ class MODWTFeatureEngineer:
         
         return df
 
-    @staticmethod
-    def available_wavelets():
+    # @staticmethod
+    def available_wavelets(self):
         """
         Retrieve a list of available wavelet names from PyWavelets.
 
@@ -343,4 +350,5 @@ class MODWTFeatureEngineer:
         list of str
             Available wavelet names.
         """
-        return pywt.wavelist()
+        # return pywt.wavelist()
+        return list(self.scaling_dict.keys())

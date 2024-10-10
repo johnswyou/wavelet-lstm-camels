@@ -1,6 +1,15 @@
 import os
 import glob
 import pandas as pd
+import pickle
+
+
+def load_pickle(filepath):
+    with open(filepath, 'rb') as f:
+        file = pickle.load(f)
+
+    return file
+
 
 def get_csv_filename_without_extension(file_path):
     """
