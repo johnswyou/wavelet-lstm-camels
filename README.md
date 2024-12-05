@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository houses the complete codebase and datasets utilized in my Master's research thesis titled **"Large Sample Study of Wavelet Coupled LSTM Forecasting Using CAMELS"**. The project focuses on developing advanced forecasting models by integrating Wavelet Transform techniques with Long Short-Term Memory (LSTM) neural networks, leveraging the comprehensive CAMELS (Catchment Attributes and Meteorology for Large-sample Studies) dataset.
+This repository houses the complete codebase and datasets utilized in my Master's research thesis titled **"Improving Short-term Streamflow Forecasting with Wavelet Transforms: A Large-Sample Evaluation"**. The project focuses on developing advanced forecasting models by integrating Wavelet Transform techniques with Long Short-Term Memory (LSTM) neural networks, leveraging the comprehensive CAMELS (Catchment Attributes and Meteorology for Large-sample Studies) dataset.
 
 ## Table of Contents
 
