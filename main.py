@@ -14,6 +14,7 @@ import pandas as pd
 import rpy2.robjects as robjects
 from rpy2.robjects import pandas2ri
 from rpy2.robjects.packages import importr
+from rpy2.robjects.conversion import localconverter # For rpy2 3.1.x
 import tensorflow as tf
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.preprocessing import MinMaxScaler
@@ -469,7 +470,8 @@ def main(args: argparse.Namespace) -> int:
             # Perform feature selection
             # --------------------------
 
-            with (robjects.default_converter + pandas2ri.converter).context():
+            # with (robjects.default_converter + pandas2ri.converter).context(): # For rpy2 3.5.x
+            with localconverter(robjects.default_converter + pandas2ri.converter): # For rpy2 3.1.x
                 train_df_features_r = robjects.conversion.py2rpy(train_df_features)
                 train_df_q_target_r = robjects.conversion.py2rpy(train_df_q_target)
                 
@@ -492,7 +494,8 @@ def main(args: argparse.Namespace) -> int:
             baseline_selected_feature_indices, baseline_selected_feature_names, baseline_selected_feature_scores = ivsIOData(baseline_train_df_q_target_r, baseline_train_df_features_r, "ea_cmi_tol", 0.05)
             
             # Convert r outputs back to python
-            with (robjects.default_converter + pandas2ri.converter).context():
+            # with (robjects.default_converter + pandas2ri.converter).context(): # For rpy2 3.5.x
+            with localconverter(robjects.default_converter + pandas2ri.converter): # For rpy2 3.1.x
                 selected_feature_indices = robjects.conversion.rpy2py(selected_feature_indices) # np.array
                 selected_feature_names = robjects.conversion.rpy2py(selected_feature_names)
                 selected_feature_scores = robjects.conversion.rpy2py(selected_feature_scores) # np.array

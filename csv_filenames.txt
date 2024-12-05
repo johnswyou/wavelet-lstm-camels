@@ -416,7 +416,6 @@
 06910800_camels.csv
 13337000_camels.csv
 12377150_camels.csv
-09535100_camels.csv
 04216418_camels.csv
 05593575_camels.csv
 14092750_camels.csv

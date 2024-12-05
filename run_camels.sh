@@ -5,15 +5,25 @@
 #SBATCH --time=24:00:00
 #SBATCH --mem=12000M
 #SBATCH --gpus-per-node=1
-#SBATCH --array=1-621
+#SBATCH --array=1-620
 
 module purge
 module load python/3.10
 module load r/4.4
-source /home/jswyou/projects/def-quiltyjo/jswyou/tf/bin/activate
+
+virtualenv --no-download $SLURM_TMPDIR/tf
+source $SLURM_TMPDIR/tf/bin/activate
+pip install --no-index --upgrade pip
+
+pip install --no-index tensorflow
+pip install --no-index keras
+pip install --no-index rpy2==3.1.0
+pip install --no-index scikit-learn
+pip install --no-index scipy
+pip install --no-index pandas==1.5.3
+
 pip install tensorflow --upgrade
 pip install keras --upgrade
-pip install rpy2 --upgrade
 
 echo "Starting run at: `date`"
 
