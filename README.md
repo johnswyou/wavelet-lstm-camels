@@ -50,7 +50,7 @@ The CAMELS dataset provides a wide range of hydrological and meteorological attr
 - **CSV Filenames:** Listed in [`csv_filenames.txt`](./csv_filenames.txt)
 - **Data Attributes:** Include streamflow (`Q`), precipitation (`prcp(mm/day)`), temperature (`tmax(C)`, `tmin(C)`), solar radiation (`srad(W/m²)`), and more.
 
-**Note**: Presently, there are 621 CSV files stored in `data.zip`. We are only interested in the 620 csv files listed in `csv_filenames.txt`. `data.zip` will be modified to drop the one additional CSV file (`09535100_camels.csv`) that does not get used.
+**Note**: Presently, there are 621 CSV files stored in `data.zip`. We are only interested in the 620 csv files listed in `csv_filenames.txt`. In the future, `data.zip` will be modified to drop the one additional CSV file (`09535100_camels.csv`) that does not get used.
 
 **Note**: We drop 51 catchments (CSV files) from the original 671 CAMELS dataset due to missing data, data quality, and/or data quantity issues.
 
