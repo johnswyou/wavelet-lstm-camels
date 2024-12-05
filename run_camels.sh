@@ -8,7 +8,7 @@
 #SBATCH --array=1-620
 
 module purge
-module load python/3.10
+module load python/3.11
 module load r/4.4
 
 virtualenv --no-download $SLURM_TMPDIR/tf
