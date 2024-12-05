@@ -295,16 +295,16 @@ def main(args: argparse.Namespace) -> int:
             # Try to import 'remotes'; install if not available
             utils = importr('utils')
 
-            try:
-                remotes = importr('remotes')
-            except:
-                print("Installing 'remotes' package from CRAN...")
-                utils.install_packages('remotes')
-                remotes = importr('remotes')
+            # try:
+            #     remotes = importr('remotes')
+            # except:
+            #     print("Installing 'remotes' package from CRAN...")
+            #     utils.install_packages('remotes')
+            #     remotes = importr('remotes')
 
             # Install hydroIVS
-            github_repo = 'johnswyou/hydroIVS'
-            remotes.install_github(github_repo)
+            # github_repo = 'johnswyou/hydroIVS'
+            # remotes.install_github(github_repo)
 
             start_section_modwt = time.perf_counter()
 
@@ -399,6 +399,10 @@ def main(args: argparse.Namespace) -> int:
             # Step 4 (updated): Feature Selection
             # ----------------------------
 
+            # -----------
+            # Fit scaler
+            # -----------
+
             earliest_training_date = train_seq[0][0]['date'].iloc[0]
             last_training_date = train_seq[len(train_seq)-1][0]['date'].iloc[-1]
 
@@ -431,12 +435,47 @@ def main(args: argparse.Namespace) -> int:
             # Concatenate train_df_features and train_df_q
             # train_df_features['Q'] = train_df_q
 
+            # Needs to be a pandas series
+            train_df_q_target = pd.Series(train_df_q_target, name = "Q_target")
+
+            # *********
+            # BASELINE
+            # *********
+
+            # Initialize and fit baseline scalers
+            baseline_scaler = MinMaxScaler()
+            baseline_q_scaler = MinMaxScaler()
+
+            # Get baseline features and target
+            baseline_train_df_q_target = train_df["Q_target"]
+            baseline_train_df_features = train_df.drop(["Q_target", "date"], axis=1)
+            baseline_feature_names = [
+                "Q",
+                "timestamp",
+                "dayl(s)",
+                "prcp(mm/day)",
+                "srad(W/m2)",
+                "swe(mm)",
+                "tmax(C)",
+                "tmin(C)",
+                "vp(Pa)"
+            ]
+            baseline_train_df_features = baseline_train_df_features.loc[:, baseline_feature_names]
+            baseline_train_df_features = pd.DataFrame(baseline_scaler.fit_transform(baseline_train_df_features), columns=baseline_feature_names)
+            baseline_train_df_q_target = baseline_q_scaler.fit_transform(baseline_train_df_q_target.values.reshape(-1, 1)).flatten() # 1D numpy array
+            baseline_train_df_q_target = pd.Series(baseline_train_df_q_target, name = "Q_target")
+
+            # --------------------------
             # Perform feature selection
-            train_df_q_target = pd.Series(train_df_q_target, name = "Q_target") # Needs to be a pandas series
+            # --------------------------
 
             with (robjects.default_converter + pandas2ri.converter).context():
                 train_df_features_r = robjects.conversion.py2rpy(train_df_features)
                 train_df_q_target_r = robjects.conversion.py2rpy(train_df_q_target)
+                
+                # BASELINE
+                baseline_train_df_features_r = robjects.conversion.py2rpy(baseline_train_df_features)
+                baseline_train_df_q_target_r = robjects.conversion.py2rpy(baseline_train_df_q_target)
 
             # robjects.globalenv['train_df_features'] =  train_df_features_r
             # robjects.globalenv['train_df_q_target'] =  train_df_q_target_r
@@ -449,16 +488,26 @@ def main(args: argparse.Namespace) -> int:
             end_section_ea = time.perf_counter()
             timings['ea_cmi_tol'] = end_section_ea - start_section_ea
 
+            # BASELINE
+            baseline_selected_feature_indices, baseline_selected_feature_names, baseline_selected_feature_scores = ivsIOData(baseline_train_df_q_target_r, baseline_train_df_features_r, "ea_cmi_tol", 0.05)
+            
             # Convert r outputs back to python
             with (robjects.default_converter + pandas2ri.converter).context():
                 selected_feature_indices = robjects.conversion.rpy2py(selected_feature_indices) # np.array
                 selected_feature_names = robjects.conversion.rpy2py(selected_feature_names)
                 selected_feature_scores = robjects.conversion.rpy2py(selected_feature_scores) # np.array
 
+                # BASELINE
+                baseline_selected_feature_indices = robjects.conversion.rpy2py(baseline_selected_feature_indices) # np.array
+                baseline_selected_feature_names = robjects.conversion.rpy2py(baseline_selected_feature_names)
+                baseline_selected_feature_scores = robjects.conversion.rpy2py(baseline_selected_feature_scores) # np.array
+
             selected_feature_names = list(selected_feature_names) # selected_feature_names has trouble converting back to python so we help it
             selected_feature_indices = selected_feature_indices - 1 # account for the 0 based indexing in python
 
-            # We now have selected_feature_names; the selected features
+            # BASELINE
+            baseline_selected_feature_names = list(baseline_selected_feature_names)
+            baseline_selected_feature_indices = baseline_selected_feature_indices - 1
 
             # ----------------------------
             # Step 4.5: Scale Features
@@ -468,23 +517,50 @@ def main(args: argparse.Namespace) -> int:
             X_val, y_val_scaled = scale_sequences(val_seq, scaler, q_scaler, train_df_features.columns)
             X_test, y_test_scaled = scale_sequences(test_seq, scaler, q_scaler, train_df_features.columns)
 
+            # BASELINE
+            baseline_X_train, baseline_y_train_scaled = scale_sequences(train_seq, baseline_scaler, baseline_q_scaler, baseline_feature_names)
+            baseline_X_val, baseline_y_val_scaled = scale_sequences(val_seq, baseline_scaler, baseline_q_scaler, baseline_feature_names)
+            baseline_X_test, baseline_y_test_scaled = scale_sequences(test_seq, baseline_scaler, baseline_q_scaler, baseline_feature_names)
+
             # Subset the columns of X_train, X_val and X_test acccording to selected_feature_indices
             X_train = X_train[:, :, selected_feature_indices]
             X_val = X_val[:, :, selected_feature_indices]
             X_test = X_test[:, :, selected_feature_indices]
 
+            # BASELINE
+            baseline_X_train = baseline_X_train[:, :, baseline_selected_feature_indices]
+            baseline_X_val = baseline_X_val[:, :, baseline_selected_feature_indices]
+            baseline_X_test = baseline_X_test[:, :, baseline_selected_feature_indices]
+
             # Save the input scaler
             with open(args.base_save_path / catchment_id / f"leadtime_{forecast_horizon}" / filter_shortname / "feature_scaler.pkl", 'wb') as f:
                 pickle.dump(scaler, f)
+
+            # BASELINE
+            with open(args.base_save_path / catchment_id / f"leadtime_{forecast_horizon}" / filter_shortname / "baseline_feature_scaler.pkl", 'wb') as f:
+                pickle.dump(baseline_scaler, f)
 
             # Save the target scaler
             with open(args.base_save_path / catchment_id / f"leadtime_{forecast_horizon}" / filter_shortname / "q_scaler.pkl", 'wb') as f:
                 pickle.dump(q_scaler, f)
 
+            # BASELINE
+            with open(args.base_save_path / catchment_id / f"leadtime_{forecast_horizon}" / filter_shortname / "baseline_q_scaler.pkl", 'wb') as f:
+                pickle.dump(baseline_q_scaler, f)
+
             # Save the selected feature names, indices and scores
-            selected_features_dict = {"selected_feature_names": selected_feature_names,
-                                      "selected_feature_indices": selected_feature_indices,
-                                      "selected_feature_scores": selected_feature_scores}
+            # selected_features_dict = {"selected_feature_names": selected_feature_names,
+            #                           "selected_feature_indices": selected_feature_indices,
+            #                           "selected_feature_scores": selected_feature_scores}
+
+            selected_features_dict = {
+                "selected_feature_names": selected_feature_names,
+                "selected_feature_indices": selected_feature_indices,
+                "selected_feature_scores": selected_feature_scores,
+                "baseline_selected_feature_names": baseline_selected_feature_names,
+                "baseline_selected_feature_indices": baseline_selected_feature_indices,
+                "baseline_selected_feature_scores": baseline_selected_feature_scores
+            }
 
             with open(args.base_save_path / catchment_id / f"leadtime_{forecast_horizon}" / filter_shortname / "ea_cmi_tol_005_selected_feature_names.pkl", 'wb') as f:
                 pickle.dump(selected_features_dict, f)
@@ -525,6 +601,38 @@ def main(args: argparse.Namespace) -> int:
 
             model.summary()
 
+            # -------------------------
+            # Step 5.5: Baseline Model
+            # -------------------------
+
+            baseline_num_features = baseline_X_train.shape[2]
+
+            baseline_model = Sequential()
+            baseline_model.add(Input(shape=(timesteps, baseline_num_features)))
+            baseline_model.add(LSTM(256, activation='tanh', return_sequences=False))
+            baseline_model.add(Dropout(0.4))
+            # baseline_model.add(Dense(n_ahead, activation='linear'))
+            baseline_model.add(Dense(1, activation='linear'))
+
+            baseline_model.compile(
+                optimizer=Adam(learning_rate=0.001),
+                loss='mse',
+                metrics=[
+                    'mae',
+                    'mse',
+                    'mape',
+                    r2_keras,
+                    NashSutcliffeEfficiency(),
+                    KlingGuptaEfficiency()
+                ]
+            )
+
+            print()
+            print("Baseline model structure:")
+            print()
+
+            baseline_model.summary()
+
             # ----------------------------
             # Step 6: Training the Model
             # ----------------------------
@@ -534,7 +642,7 @@ def main(args: argparse.Namespace) -> int:
             start_section_lstm = time.perf_counter()
             history = model.fit(
                 X_train, y_train_scaled,
-                epochs=100,
+                epochs=1000,
                 batch_size=32,
                 validation_data=(X_val, y_val_scaled),
                 callbacks=[early_stop],
@@ -543,11 +651,26 @@ def main(args: argparse.Namespace) -> int:
             end_section_lstm = time.perf_counter()
             timings['lstm'] = end_section_lstm - start_section_lstm
 
+            # BASELINE
+            baseline_early_stop = EarlyStopping(monitor='val_nse', patience=10, restore_best_weights=True, mode='max')
+            baseline_history = baseline_model.fit(
+                baseline_X_train, baseline_y_train_scaled,
+                epochs=1000,
+                batch_size=32,
+                validation_data=(baseline_X_val, baseline_y_val_scaled),
+                callbacks=[baseline_early_stop],
+                verbose=2
+            )
+
             with open(args.base_save_path / catchment_id / f"leadtime_{forecast_horizon}" / filter_shortname / "timings.pkl", 'wb') as f:
                 pickle.dump(timings, f)
 
             with open(args.base_save_path / catchment_id / f"leadtime_{forecast_horizon}" / filter_shortname / "history.pkl", 'wb') as f:
                 pickle.dump(history.history, f)
+
+            # BASELINE
+            with open(args.base_save_path / catchment_id / f"leadtime_{forecast_horizon}" / filter_shortname / "baseline_history.pkl", 'wb') as f:
+                pickle.dump(baseline_history.history, f)
 
             # ----------------------------
             # Step 7: Plotting Loss Curves
@@ -614,6 +737,55 @@ def main(args: argparse.Namespace) -> int:
             # Save pred_label_df
             pred_label_df.to_pickle(args.base_save_path / catchment_id / f"leadtime_{forecast_horizon}" / filter_shortname / "pred_label_df.pkl")
 
+            # --------------------------
+            # Step 8.5: Evaluating the Baseline Model
+            # --------------------------
+
+            # Predict on test data
+            baseline_y_pred_scaled = baseline_model.predict(baseline_X_test)
+
+            # Inverse transform predictions and true values
+            baseline_y_pred = baseline_q_scaler.inverse_transform(baseline_y_pred_scaled)
+            baseline_y_true = baseline_q_scaler.inverse_transform(baseline_y_test_scaled)
+
+            # Calculate evaluation metrics
+            baseline_mape = mean_absolute_percentage_error(baseline_y_true, baseline_y_pred)
+            baseline_rmse = np.sqrt(mean_squared_error(baseline_y_true, baseline_y_pred))
+            baseline_mae = mean_absolute_error(baseline_y_true, baseline_y_pred)
+            baseline_mase = mean_absolute_scaled_error(baseline_y_true, baseline_y_pred)
+            baseline_r2 = r2_score(baseline_y_true, baseline_y_pred)
+            baseline_nse = nash_sutcliffe_efficiency(baseline_y_true, baseline_y_pred)
+            baseline_kge = kling_gupta_efficiency(baseline_y_true, baseline_y_pred)
+
+            print(f'Baseline Test NSE: {baseline_nse:.2f}')
+            print(f'Baseline Test KGE: {baseline_kge:.2f}')
+            print(f'Baseline Test RMSE: {baseline_rmse:.2f}')
+            print(f'Baseline Test MAE: {baseline_mae:.2f}')
+            print(f'Baseline Test MAPE: {baseline_mape:.2f}')
+            print(f'Baseline Test MASE: {baseline_mase:.2f}')
+            print(f'Baseline Test R²: {baseline_r2:.2f}')
+
+            baseline_test_metrics_dict = {
+                "nse": baseline_nse,
+                "kge": baseline_kge,
+                "rmse": baseline_rmse,
+                "mae": baseline_mae,
+                "mape": baseline_mape,
+                "mase": baseline_mase,
+                "r2": baseline_r2
+            }
+            
+            with open(args.base_save_path / catchment_id / f"leadtime_{forecast_horizon}" / filter_shortname / "baseline_test_metrics_dict.pkl", "wb") as f:
+                pickle.dump(baseline_test_metrics_dict, f)
+
+            # Create a prediction and label data frame
+
+            pred_label_df["baseline_y_pred"] = baseline_y_pred
+            pred_label_df["baseline_y_true"] = baseline_y_true
+
+            # Save pred_label_df
+            pred_label_df.to_pickle(args.base_save_path / catchment_id / f"leadtime_{forecast_horizon}" / filter_shortname / "baseline_pred_label_df.pkl")
+
             # --------------------------------
             # Step 9: Visualizing Predictions
             # --------------------------------
@@ -673,6 +845,13 @@ def main(args: argparse.Namespace) -> int:
                 logger.info(f"Trained LSTM-{filter_shortname} for h={forecast_horizon} has been saved.")
             except Exception as e:
                 logger.exception(f"Failed to save trained LSTM-{filter_shortname} for h={forecast_horizon}.")
+                return 1
+            
+            try:
+                baseline_model.save(args.base_save_path / catchment_id / f"leadtime_{forecast_horizon}" / filter_shortname / "baseline_model.keras")
+                logger.info(f"Trained baseline LSTM for h={forecast_horizon} has been saved.")
+            except Exception as e:
+                logger.exception(f"Failed to save trained baseline LSTM for h={forecast_horizon}.")
                 return 1
     
     # # Example: Write to output file
