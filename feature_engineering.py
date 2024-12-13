@@ -154,6 +154,10 @@ class MODWTFeatureEngineer:
             g_tilde_j, h_tilde_j = equivalent_filter(g, h, j)
             L_j = len(h_tilde_j)
 
+            # Normalize the filters by 2^(j/2) for MODWT
+            g_tilde_j = g_tilde_j / (2**(j/2))
+            h_tilde_j = h_tilde_j / (2**(j/2))
+
             W_j = np.zeros(N)
             V_j = np.zeros(N)
 
