@@ -6,3 +6,5 @@ data
 archive
 *.ipynb
 notes
+.DS_Store
+ad_hoc_tests
