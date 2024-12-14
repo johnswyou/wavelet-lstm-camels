@@ -14,7 +14,7 @@ module load r/4.4
 virtualenv --no-download $SLURM_TMPDIR/tf
 source $SLURM_TMPDIR/tf/bin/activate
 pip install --no-index --upgrade pip
-
+pip install --no-index matplotlib
 pip install --no-index tensorflow
 pip install --no-index keras
 pip install --no-index rpy2==3.1.0
