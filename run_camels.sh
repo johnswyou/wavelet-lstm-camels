@@ -21,7 +21,6 @@ pip install --no-index rpy2==3.1.0
 pip install --no-index scikit-learn
 pip install --no-index scipy
 pip install --no-index pandas==1.5.3
-
 pip install tensorflow --upgrade
 pip install keras --upgrade
 
