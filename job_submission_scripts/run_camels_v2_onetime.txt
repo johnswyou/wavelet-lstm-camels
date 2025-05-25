@@ -1,0 +1,33 @@
+# 0) Pick a permanent place for the tarballs
+export PKGSRC=/project/6040293/jswyou/pkgsrc
+mkdir -p "$PKGSRC"
+
+# 1) Load the exact same modules the jobs will use
+module purge
+module load gcc/12.3 r/4.4
+
+# 2) Grab the three CRAN dependencies
+Rscript -e 'pkgs <- c("Rcpp", "RcppEigen", "ranger", "Boruta", "RANN", "RRF");
+            download.packages(pkgs, destdir=Sys.getenv("PKGSRC"),
+                              type="source",
+                              repos="https://cloud.r-project.org")'
+
+# 3) Clone your GitHub repo and build it into a tarball
+git clone --depth 1 https://github.com/johnswyou/hydroIVS.git
+R CMD build hydroIVS                          # produces hydroIVS_0.4‑x.tar.gz
+mv hydroIVS_*.tar.gz "$PKGSRC"
+
+# 4) (Optional) test that everything actually installs
+export R_LIBS_USER=$PWD/test_lib && mkdir -p "$R_LIBS_USER"
+for pkg in "${ordered[@]}"; do
+    tar=$(ls "$PKGSRC/${pkg}"_*.tar.gz | head -n 1)
+    if [ -f "$tar" ]; then
+        echo "Installing $pkg from $(basename "$tar")"
+        R CMD INSTALL --no-multiarch --library="$R_LIBS_USER" "$tar"
+    else
+        echo "ERROR: $pkg tarball not found in $PKGSRC" >&2
+        exit 1
+    fi
+done
+Rscript -e 'library(hydroIVS); cat("✓ hydroIVS loads\n")'
+rm -rf "$R_LIBS_USER"

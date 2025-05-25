@@ -8,3 +8,7 @@ archive
 notes
 .DS_Store
 ad_hoc_tests
+slurm-output-files
+old
+old_1
+unused

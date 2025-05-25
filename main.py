@@ -296,12 +296,12 @@ def main(args: argparse.Namespace) -> int:
             # Try to import 'remotes'; install if not available
             utils = importr('utils')
 
-            try:
-                remotes = importr('remotes')
-            except:
-                print("Installing 'remotes' package from CRAN...")
-                utils.install_packages('remotes')
-                remotes = importr('remotes')
+            # try:
+            #     remotes = importr('remotes')
+            # except:
+            #     print("Installing 'remotes' package from CRAN...")
+            #     utils.install_packages('remotes')
+            #     remotes = importr('remotes')
 
             # Install hydroIVS
             # github_repo = 'johnswyou/hydroIVS'
@@ -482,13 +482,15 @@ def main(args: argparse.Namespace) -> int:
             # robjects.globalenv['train_df_features'] =  train_df_features_r
             # robjects.globalenv['train_df_q_target'] =  train_df_q_target_r
 
-            try:
-                hydroIVS = importr('hydroIVS')
-            except:
-                print("Installing 'hydroIVS' package from CRAN...")
-                github_repo = 'johnswyou/hydroIVS'
-                remotes.install_github(github_repo)
-                hydroIVS = importr('hydroIVS')
+            # try:
+            #     hydroIVS = importr('hydroIVS')
+            # except:
+            #     print("Installing 'hydroIVS' package from CRAN...")
+            #     github_repo = 'johnswyou/hydroIVS'
+            #     remotes.install_github(github_repo)
+            #     hydroIVS = importr('hydroIVS')
+
+            hydroIVS = importr('hydroIVS')
 
             ivsIOData = hydroIVS.ivsIOData
             start_section_ea = time.perf_counter()
