@@ -26,8 +26,8 @@ Here's a step-by-step walkthrough:
 
 4.  **Custom Keras Metrics:**
     *   `r2_keras`: A function to calculate the R² (coefficient of determination) metric within a Keras model.
-    *   `NashSutcliffeEfficiency`: A custom Keras metric class to calculate the Nash-Sutcliffe Efficiency.
-    *   `KlingGuptaEfficiency`: A custom Keras metric class to calculate the Kling-Gupta Efficiency.
+    *   `NashSutcliffeEfficiency`: A custom Keras metric class to calculate the Nash-Sutcliffe Efficiency. This class maintains state variables to compute NSE incrementally across batches.
+    *   `KlingGuptaEfficiency`: A custom Keras metric class to calculate the Kling-Gupta Efficiency. This class maintains state variables to compute KGE incrementally across batches.
 
 5.  **Main Function (`main` function):**
     *   This is the core of the script. It takes the parsed arguments as input.
@@ -54,11 +54,12 @@ Here's a step-by-step walkthrough:
             *   The `transform` method of `MODWTFeatureEngineer` is called to compute MODWT wavelet (W) and scaling (V) coefficients for each of the specified `features`. These new coefficient series are added as new columns to the DataFrame (e.g., `Q_W1`, `Q_V6`, `prcp(mm/day)_W1`, etc.).
             *   Rows with NaN values (generated at the beginning of the series due to MODWT boundary effects) are dropped.
             *   `feature_columns` is updated to include these new MODWT features.
+            *   Timing for the MODWT process is recorded in the `timings` dictionary.
         *   **Step 3: Splitting the Dataset:**
             *   The data is prepared into sequences for the LSTM model. An `input_window` of 270 days is used.
             *   For each sample, the input is a sequence of `input_window` days of all features, and the output is the 'Q' value at the specified `forecast_horizon` days ahead (direct forecasting).
             *   The sequences are split into training (70%), validation (15%), and test (15%) sets.
-        *   **Step 4 (Updated): Feature Selection:**
+        *   **Step 4: Feature Selection and Scaling:**
             *   **Scaler Fitting (on Training Data):**
                 *   A copy of the DataFrame (`train_df`) is made, focusing on the date range covered by the training sequences.
                 *   A target column `Q_target` is created by shifting the 'Q' column by the negative `forecast_horizon`.
@@ -71,6 +72,7 @@ Here's a step-by-step walkthrough:
                 *   The `ivsIOData` function from `hydroIVS` is called. Based on the `hydroIVS` GitHub README, this function performs input variable selection. The method used here is `"ea_cmi_tol"` with a parameter of `0.05`. The README describes `ea_cmi_tol` as "Edgeworth Approximation (EA) based Shannon Conditional Mutual Information (CMI) Input Variable Selection (IVS) using ratio of CMI over Mutual Information (MI) to identify significant inputs." The `0.05` likely represents this ratio threshold.
                 *   This selection is done for both the MODWT features and the baseline features.
                 *   The results (selected feature indices, names, and scores) are converted back to Python objects. Indices are adjusted for 0-based Python indexing.
+                *   Timing for the feature selection process is recorded in the `timings` dictionary.
         *   **Step 4.5: Scale Features (Applying Scalers):**
             *   The `scale_sequences` helper function is defined to apply the *fitted* scalers (`scaler` and `q_scaler` for MODWT features, `baseline_scaler` and `baseline_q_scaler` for baseline) to the training, validation, and test sequences. This produces `X_train`, `y_train_scaled`, `X_val`, `y_val_scaled`, etc.
             *   The input feature arrays (`X_train`, `X_val`, `X_test`) are then subsetted to include only the features selected by `hydroIVS` (using `selected_feature_indices`). The same is done for the baseline model's input arrays.
@@ -88,7 +90,7 @@ Here's a step-by-step walkthrough:
             *   `EarlyStopping` callbacks are defined for both models, monitoring `val_nse` (validation Nash-Sutcliffe Efficiency) with a patience of 10 epochs and restoring the best weights. The mode is 'max' because higher NSE is better.
             *   The wavelet LSTM model is trained using `model.fit` with `X_train` and `y_train_scaled`, validating on `(X_val, y_val_scaled)`.
             *   The baseline LSTM model is trained similarly with its respective data.
-            *   Timings for different sections (MODWT, feature selection, LSTM training) are recorded in a `timings` dictionary.
+            *   Timing for the LSTM training is recorded in the `timings` dictionary.
             *   The `timings` dictionary and the training history (losses, metrics per epoch) for both models are saved to pickle files.
         *   **Step 8: Evaluating the Model (Wavelet LSTM):**
             *   Predictions (`y_pred_scaled`) are made on the test set (`X_test`).
@@ -99,7 +101,7 @@ Here's a step-by-step walkthrough:
         *   **Step 8.5: Evaluating the Baseline Model:**
             *   The same evaluation process is repeated for the baseline model using `baseline_X_test`, `baseline_y_test_scaled`, and `baseline_q_scaler`.
             *   Baseline test metrics are printed and saved to `baseline_test_metrics_dict.pkl`.
-            *   The baseline predictions (`baseline_y_pred`) and true values (`baseline_y_true`) are added to the `pred_label_df`, which is then re-saved.
+            *   The baseline predictions (`baseline_y_pred`) and true values (`baseline_y_true`) are added to the `pred_label_df`, which is then re-saved as `baseline_pred_label_df.pkl`.
         *   **Step 11: Saving the Model:**
             *   The trained wavelet LSTM model (`model`) is saved in Keras format (`.keras`) to the specific output directory.
             *   The trained baseline LSTM model (`baseline_model`) is also saved.
@@ -112,6 +114,30 @@ Here's a step-by-step walkthrough:
     *   The `timings` dictionary is initialized.
     *   Logging is set up based on the `--verbose` flag.
     *   The `main` function is called, and its exit code is used to terminate the script.
+
+## Key Files Generated
+
+For each combination of catchment, forecast horizon, and wavelet filter, the script generates the following files in the directory structure `{base_save_path}/{catchment_id}/leadtime_{forecast_horizon}/{filter_shortname}/`:
+
+**Wavelet LSTM Model Files:**
+- `model.keras` - Trained wavelet LSTM model
+- `feature_scaler.pkl` - MinMaxScaler for input features
+- `q_scaler.pkl` - MinMaxScaler for target variable
+- `test_metrics_dict.pkl` - Test evaluation metrics
+- `history.pkl` - Training history
+- `pred_label_df.pkl` - Predictions and true values with dates
+
+**Baseline LSTM Model Files:**
+- `baseline_model.keras` - Trained baseline LSTM model
+- `baseline_feature_scaler.pkl` - MinMaxScaler for baseline input features
+- `baseline_q_scaler.pkl` - MinMaxScaler for baseline target variable
+- `baseline_test_metrics_dict.pkl` - Baseline test evaluation metrics
+- `baseline_history.pkl` - Baseline training history
+- `baseline_pred_label_df.pkl` - Combined predictions dataframe with both models
+
+**Shared Files:**
+- `ea_cmi_tol_005_selected_feature_names.pkl` - Selected features for both models
+- `timings.pkl` - Timing information for different processing steps
 
 In summary, `main.py` automates a complex workflow for hydrological forecasting. For each specified catchment, forecast horizon, and wavelet type, it performs:
 1.  Data loading and extensive preprocessing.
