@@ -67,4 +67,6 @@ where:
 - **Wavelet names** (db1, db2, sym4, etc.) represent different wavelets used for feature engineering
 - **Files** contain trained models, scalers, predictions, metrics, and timing information for each experiment configuration
 
+**Note**: The structure and content of the above files (specifically, the `.pkl` files shown above) are described in greater detail in `./context/result_explanation_1.md`.
+
 **Note**: `mnt` is a directory that was mounted via s3 mountpoint. The folder simulates the "feeling" of accessing the s3 bucket (`s3://modwt-lstm-results`) locally, as though the bucket's contents were available locally.
