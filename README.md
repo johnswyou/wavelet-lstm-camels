@@ -1,201 +1,216 @@
-# Wavelet-Coupled LSTM Forecasting with CAMELS Data
+# Wavelet-LSTM Streamflow Forecasting with CAMELS Dataset
 
 ## Overview
 
-This repository houses the complete codebase and datasets utilized in my Master's research thesis titled **"Improving Short-term Streamflow Forecasting with Wavelet Transforms: A Large-Sample Evaluation"**. The project focuses on developing advanced forecasting models by integrating Wavelet Transform techniques with Long Short-Term Memory (LSTM) neural networks, leveraging the comprehensive CAMELS (Catchment Attributes and Meteorology for Large-sample Studies) dataset.
+This repository contains the research code for training wavelet-enhanced LSTM models for streamflow forecasting using the CAMELS (Catchment Attributes and Meteorology for Large-sample Studies) dataset. The project investigates whether incorporating MODWT (Maximal Overlap Discrete Wavelet Transform) features improves LSTM-based streamflow forecasting performance across multiple catchments.
 
-## Table of Contents
+The research involved training **61,380 LSTM models** in total:
+- 620 catchments × 3 lead times × 33 wavelet/scaling filters = 61,380 wavelet LSTM models
+- Plus baseline LSTM models (without wavelet features) for comparison
 
-- [Overview](#overview)
-- [Features](#features)
-- [Architecture](#architecture)
-- [Data](#data)
-- [Installation](#installation)
-- [Usage](#usage)
-  - [Training Models](#training-models)
-  - [Evaluation](#evaluation)
-- [Directory Structure](#directory-structure)
-- [Dependencies](#dependencies)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgments](#acknowledgments)
+## Key Features
 
-## Features
+- **Multi-horizon Forecasting:** 1, 3, and 5 days ahead streamflow prediction
+- **Wavelet Feature Engineering:** 33 different wavelet and scaling filters using MODWT
+- **Large-scale Evaluation:** 620 catchments from the CAMELS dataset (51 catchments excluded due to data quality issues)
+- **Advanced Feature Selection:** Uses the `hydroIVS` R package for input variable selection
+- **HPC-ready:** Designed for parallel execution on SLURM-based clusters
+- **Comprehensive Evaluation:** Includes custom hydrological metrics (NSE, KGE)
 
-- **Wavelet Transform Integration:** Enhances model performance by decomposing time-series data into different frequency components.
-- **LSTM Neural Networks:** Utilizes LSTM layers for capturing temporal dependencies in hydrological data.
-- **Custom Metrics:** Implements specialized metrics like Nash-Sutcliffe Efficiency (NSE) and Kling-Gupta Efficiency (KGE) for model evaluation.
-- **Feature Engineering:** Employs MODWT (Maximal Overlap Discrete Wavelet Transform) for feature extraction.
-- **Baseline Models:** Includes baseline LSTM models for performance comparison.
-- **Automated Feature Selection:** Uses hydroIVS for feature importance and selection.
+## Project Structure
 
-## Architecture
+```
+wavelet-lstm-camels/
+├── main.py                          # Main training script
+├── inference.py                     # Inference script for model evaluation
+├── feature_engineering.py           # MODWT feature extraction
+├── metrics.py                       # Custom evaluation metrics
+├── utils.py                         # Utility functions
+├── requirements.txt                 # Python dependencies
+├── csv_filenames.txt               # List of 620 CSV files used
+├── data.zip                        # Compressed CAMELS dataset (621 files)
+├── context/                        # Documentation and explanations
+│   ├── main_script_explanation.md
+│   ├── result_explanation.md
+│   └── data_outline.md
+├── docs/                           # Installation guides
+│   ├── installing_r.md            # R installation for WSL Ubuntu
+│   ├── r_packages.md              # Required R packages
+│   └── python_version.md          # Recommended Python version (3.11.12)
+├── job_submission_scripts/         # HPC job submission scripts
+│   ├── run_camels_v2.sh          # SLURM array job script
+│   └── run_camels_v2_onetime.txt # One-time setup commands
+├── filters/                        # Wavelet filter specifications
+├── naive_baseline/                 # Naive baseline model
+└── one_time_scripts/              # Utility scripts
+```
 
-The main workflow consists of the following steps:
+## Experimental Design
 
-1. **Data Loading and Preprocessing:** Handles missing values, feature selection, and engineering using MODWT.
-2. **Scaling and Normalization:** Applies Min-Max scaling to input features and target variables.
-3. **Feature Selection:** Selects significant features using hydroIVS based on mutual information.
-4. **Model Building:** Constructs an LSTM with dropout regularization.
-5. **Training:** Trains the model with early stopping based on validation set metrics.
-6. **Evaluation:** Assesses model performance using custom and standard metrics.
-7. **Saving Models and Results:** Persists trained models and evaluation metrics for future use.
+### Models Trained
 
-## Data
+For each of the 620 catchments:
+- **Lead times:** 1, 3, and 5 days ahead
+- **Wavelet filters:** 33 different filters including:
+  - Daubechies (db1-db7)
+  - Symlets (sym4-sym7)
+  - Coiflets (coif1-coif2)
+  - Fejer-Korovkin (fk4, fk6, fk8, fk14)
+  - Least Asymmetric (la8, la10, la12, la14)
+  - Morris minimum-bandwidth (mb4_2, mb8_2, mb8_3, mb8_4, mb10_3, mb12_3, mb14_3)
+  - Han filters (han2_3, han3_3, han4_5, han5_5)
+  - Best-localized Daubechies (bl7)
 
-### CAMELS Dataset
+### Input Variable Selection
 
-The CAMELS dataset provides a wide range of hydrological and meteorological attributes for 671 catchments in the United States. This repository uses 620 CSV files from the CAMELS dataset, each corresponding to a unique catchment.
-
-- **CSV Filenames:** Listed in [`csv_filenames.txt`](./csv_filenames.txt)
-- **Data Attributes:** Include streamflow (`Q`), precipitation (`prcp(mm/day)`), temperature (`tmax(C)`, `tmin(C)`), solar radiation (`srad(W/m²)`), and more.
-
-**Note**: Presently, there are 621 CSV files stored in `data.zip`. We are only interested in the 620 csv files listed in `csv_filenames.txt`. In the future, `data.zip` will be modified to drop the one additional CSV file (`09535100_camels.csv`) that does not get used.
-
-**Note**: We drop 51 catchments (CSV files) from the original 671 CAMELS dataset due to missing data, data quality, and/or data quantity issues.
+The project employs a niche feature selection strategy using:
+- Mutual information-based selection via `hydroIVS` R package
+- Tolerance threshold of 0.005 for EA-CMI (Edgeworth Approximation of Conditional Mutual Information)
 
 ## Installation
 
-1. **Clone the Repository:**
+### Prerequisites
 
+- Python 3.11.12 (recommended)
+- R installation (for `hydroIVS` package)
+- WSL Ubuntu (if on Windows)
+
+### Setup Instructions
+
+**Note**: Make sure you have `git-lfs` installed. See [this link](https://docs.github.com/en/repositories/working-with-files/managing-large-files/installing-git-large-file-storage).
+
+1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/wavelet-lstm-camels.git
+   git clone https://github.com/johnswyou/wavelet-lstm-camels.git
    cd wavelet-lstm-camels
    ```
 
-2. **Create a Virtual Environment:**
-
+2. **Install Python dependencies:**
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate
+   pip install -r requirements.txt
    ```
 
-3. **Install Dependencies:**
+3. **Install R and required packages:**
+   See `docs/installing_r.md` for detailed R installation instructions on WSL Ubuntu.
+   Required R packages are listed in `docs/r_packages.md`.
 
+4. **Extract the data:**
    ```bash
-   pip install --upgrade pip
-
-   pip install tensorflow
-   pip install keras
-   pip install rpy2==3.1.0
-   pip install scikit-learn
-   pip install scipy
-   pip install pandas==1.5.3
+   unzip data.zip -d data/
    ```
-
-   *If you encounter issues with R dependencies, ensure that R is installed on your system and that necessary R packages (`hydroIVS`, `remotes`, etc.) are available. Furthermore, ensure your `R_HOME` environment variable is set.*
 
 ## Usage
 
 ### Training Models
 
-Execute the main training script with the required arguments:
+The main training script `main.py` trains both wavelet-enhanced and baseline LSTM models:
 
 ```bash
-python main.py --csv_filename PATH_TO_CSV --base_save_path PATH_TO_SAVE --base_csv_path PATH_TO_CAMELS_DATA [--max_level MAX_LEVEL] [--verbose]
+python main.py --csv_filename <FILENAME> --base_save_path <OUTPUT_PATH> --base_csv_path <DATA_PATH> [options]
 ```
 
 **Arguments:**
+- `--csv_filename`: Name of the CSV file (e.g., "01013500_camels.csv")
+- `--base_save_path`: Base directory for saving results
+- `--base_csv_path`: Directory containing CAMELS CSV files
+- `--max_level`: Maximum MODWT decomposition level (default: 6)
+- `--verbose`: Enable verbose logging
 
-- `--csv_filename`: Path to the CAMELS CSV file for the specific catchment.
-- `--base_save_path`: Directory where all outputs (models, metrics, scalers) will be saved.
-- `--base_csv_path`: Directory containing all CAMELS CSV files.
-- `--max_level`: (Optional) Maximum decomposition level for MODWT. Default is `6`.
-- `--verbose`: (Optional) Enable verbose logging.
+### HPC Job Submission
 
-**Example:**
+For running on SLURM-based clusters (e.g., Graham cluster in Waterloo, Ontario):
+
+1. **One-time setup** (on login node):
+   ```bash
+   # Execute commands from job_submission_scripts/run_camels_v2_onetime.txt
+   ```
+
+2. **Submit array job:**
+   ```bash
+   sbatch job_submission_scripts/run_camels_v2.sh
+   ```
+
+The array job processes all CSV files listed in `csv_filenames.txt` in parallel.
+
+**Note**: You will likely need to edit the job submission script (lines 7, 20, and 61).
+
+### Inference
+
+**Note**: At present, the only person who can access the s3 bucket (`s3://modwt-lstm-results`) is the author. This will change once a more permanent location is found for the results data.
+
+The `inference.py` script accesses trained models from an S3 bucket mounted locally:
 
 ```bash
-python main.py --csv_filename 12358500_camels.csv --base_save_path ./output --base_csv_path ./data/camels --max_level 5 --verbose
+# Mount S3 bucket (modwt-lstm-results) to ../mnt
+# Then run inference
+python inference.py
 ```
 
-### Evaluation
-
-After training, evaluation metrics are saved in the specified `base_save_path` under the corresponding catchment and lead time directories. Additionally, prediction and true values are stored for further analysis.
-
-## Directory Structure
-
+Results are organized in the S3 bucket as:
 ```
-wavelet-lstm-camels/
-├── data/
-│   └── camels/
-│       ├── 12358500_camels.csv
-│       ├── 06934000_camels.csv
-│       └── ... (other CSV files)
-├── output/
-│   └── {catchment_id}/
-│       └── leadtime_{h}/
-│           └── {filter_shortname}/
-│               ├── model.keras
-│               ├── baseline_model.keras
-│               ├── feature_scaler.pkl
-│               ├── baseline_feature_scaler.pkl
-│               ├── q_scaler.pkl
-│               ├── baseline_q_scaler.pkl
-│               ├── ea_cmi_tol_005_selected_feature_names.pkl
-│               ├── timings.pkl
-│               ├── history.pkl
-│               ├── baseline_history.pkl
-│               ├── test_metrics_dict.pkl
-│               ├── baseline_test_metrics_dict.pkl
-│               ├── pred_label_df.pkl
-│               └── baseline_pred_label_df.pkl
-├── main.py
-├── metrics.py
-├── utils.py
-├── csv_filenames.txt
-└── README.md
+mnt/correct_output/
+└── [STATION_ID]/
+    └── leadtime_[1,3,5]/
+        └── [WAVELET_FILTER]/
+            ├── model.keras
+            ├── baseline_model.keras
+            ├── test_metrics_dict.pkl
+            ├── baseline_test_metrics_dict.pkl
+            └── ... (other artifacts)
 ```
 
-## Dependencies
+## Data
 
-- **Python Libraries:**
-  - `argparse`
-  - `logging`
-  - `numpy`
-  - `pandas`
-  - `rpy2`
-  - `tensorflow`
-  - `scikit-learn`
-  - `feature_engineering`
-  - `hydroIVS`
-  
-- **R Packages:**
-  - `hydroIVS`
-  - `remotes`
-  - `utils`
+### CAMELS Dataset
 
-*Ensure that R is installed and properly configured on your system to handle `rpy2` dependencies.*
+- **Total catchments in CAMELS:** 671
+- **Catchments used:** 620 (51 excluded due to data quality issues)
+- **Data file:** `data.zip` contains 621 CSV files (one extra file `09535100_camels.csv` to be removed)
+- **Active files:** Listed in `csv_filenames.txt` (620 in total)
 
-## Contributing
+### Features
 
-Contributions are welcome! Please follow these steps:
+Each CSV file contains:
+- Streamflow (Q)
+- Meteorological forcing data:
+  - Precipitation (prcp)
+  - Temperature (tmax, tmin)
+  - Solar radiation (srad)
+  - Vapor pressure (vp)
+  - Day length (dayl)
 
-1. **Fork the Repository**
-2. **Create a Feature Branch**
+## Results Storage
 
-   ```bash
-   git checkout -b feature/YourFeature
-   ```
+Trained models and results are stored in an S3 bucket (`modwt-lstm-results`) with the following structure:
 
-3. **Commit Your Changes**
+- Models (`.keras` files)
+- Scalers (`.pkl` files)
+- Feature names and selection results
+- Performance metrics
+- Predictions and labels
+- Training histories
+- Timing information
 
-   ```bash
-   git commit -m "Add your feature"
-   ```
+See `context/result_explanation.md` for detailed structure.
 
-4. **Push to the Branch**
+## Citation
 
-   ```bash
-   git push origin feature/YourFeature
-   ```
+If you use this code in your research, please cite:
 
-5. **Open a Pull Request**
+```
+[Citation information to be added]
+```
 
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
 
+## Acknowledgments
+
+- CAMELS dataset providers
+- `hydroIVS` R package developers
+- Compute Canada (Digital Alliance) for HPC resources
+
 ---
 
-*For any inquiries or issues, please open an [issue](https://github.com/johnswyou/wavelet-lstm-camels/issues) on this repository.*
+For questions or issues, please open an issue on this repository.
