@@ -58,7 +58,7 @@ For each of the 620 catchments:
   - Fejer-Korovkin (fk4, fk6, fk8, fk14)
   - Least Asymmetric (la8, la10, la12, la14)
   - Morris minimum-bandwidth (mb4_2, mb8_2, mb8_3, mb8_4, mb10_3, mb12_3, mb14_3)
-  - Han filters (han2_3, han3_3, han4_5, han5_5)
+  - Han linear-phase moments (han2_3, han3_3, han4_5, han5_5)
   - Best-localized Daubechies (bl7)
 
 ### Input Variable Selection
