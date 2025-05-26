@@ -139,6 +139,8 @@ For each combination of catchment, forecast horizon, and wavelet filter, the scr
 - `ea_cmi_tol_005_selected_feature_names.pkl` - Selected features for both models
 - `timings.pkl` - Timing information for different processing steps
 
+**Note**: The structure and content of the above files (specifically, the `.pkl` files shown above) are described in greater detail in `./context/result_explanation_1.md`.
+
 In summary, `main.py` automates a complex workflow for hydrological forecasting. For each specified catchment, forecast horizon, and wavelet type, it performs:
 1.  Data loading and extensive preprocessing.
 2.  Wavelet decomposition to generate additional features.
