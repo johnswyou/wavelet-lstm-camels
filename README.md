@@ -193,23 +193,14 @@ Trained models and results are stored in an S3 bucket (`modwt-lstm-results`) wit
 
 See `context/result_explanation.md` for detailed structure.
 
-## Citation
-
-If you use this code in your research, please cite:
-
-```
-[Citation information to be added]
-```
-
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
 
 ## Acknowledgments
 
-- CAMELS dataset providers
-- `hydroIVS` R package developers
-- Compute Canada (Digital Alliance) for HPC resources
+- [CAMELS dataset](https://ral.ucar.edu/solutions/products/camels) providers
+- [Digital Alliance of Canada](https://alliancecan.ca/) for HPC resources
 
 ---
 
