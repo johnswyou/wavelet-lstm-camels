@@ -1,4 +1,8 @@
-# Wavelet-LSTM Streamflow Forecasting with CAMELS Dataset
+# Thesis: Training Codes
+
+*Wavelet-LSTM Streamflow Forecasting with CAMELS Dataset*
+
+This repository stores the codes used for my [Master's thesis](https://uwspace.uwaterloo.ca/items/d7edea16-7052-4316-a464-b5a714481dbe) at the University of Waterloo under [Dr. John Quilty's](https://uwaterloo.ca/civil-environmental-engineering/profile/jquilty) supervision. This repository is messy and contains research code (i.e., bad code). Enjoy!
 
 ## Overview
 
