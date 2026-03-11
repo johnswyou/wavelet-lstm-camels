@@ -139,13 +139,11 @@ wavelet-lstm-camels/
 |   |-- scaling_dict.pkl        128 scaling (low-pass) filter coefficient arrays
 |   |-- wavelet_dict.pkl        128 wavelet (high-pass) filter coefficient arrays
 |
-|-- context/                    Documentation of the pipeline and results format
+|-- docs/                       Documentation, guides, and installation
+|   |-- data_outline.md
 |   |-- main_script_explanation.md
 |   |-- result_explanation.md
-|   |-- result_explanation_1.md
-|   |-- data_outline.md
-|
-|-- docs/                       Installation guides
+|   |-- guide.md
 |   |-- installing_r.md
 |   |-- r_packages.md
 |   |-- python_version.md
@@ -573,11 +571,15 @@ If some SLURM tasks fail:
 
 ---
 
-## 12. Inference Pipeline (`inference.py`)
+## 12. Inference Pipeline
 
-The inference script loads pre-trained models from an S3 bucket (mounted locally
-at `../mnt/correct_output/`) and makes predictions for a specified station, lead
-time, and wavelet filter.
+To make use of the trained outputs for streamflow forecasting, see the
+[wavelet-streamflow-forecast](https://github.com/johnswyou/wavelet-streamflow-forecast) repository.
+
+This repository also includes a legacy `inference.py` script that loads
+pre-trained models from a local `correct_output/` directory and makes predictions
+for a specified station, lead time, and wavelet filter. The result data is
+available upon request (contact John You at johnswyou@gmail.com).
 
 ```
 python inference.py \

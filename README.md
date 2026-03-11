@@ -29,11 +29,11 @@ wavelet-lstm-camels/
 ├── requirements.txt                 # Python dependencies
 ├── csv_filenames.txt               # List of 620 CSV files used
 ├── data.zip                        # Compressed CAMELS dataset (621 files)
-├── context/                        # Documentation and explanations
-│   ├── main_script_explanation.md
-│   ├── result_explanation.md
-│   └── data_outline.md
-├── docs/                           # Installation guides
+├── docs/                           # Documentation and guides
+│   ├── data_outline.md            # Data file descriptions
+│   ├── main_script_explanation.md # Detailed main.py walkthrough
+│   ├── result_explanation.md      # Result directory structure
+│   ├── guide.md                   # Comprehensive repository guide
 │   ├── installing_r.md            # R installation for WSL Ubuntu
 │   ├── r_packages.md              # Required R packages
 │   └── python_version.md          # Recommended Python version (3.11.12)
@@ -136,19 +136,19 @@ The array job processes all CSV files listed in `csv_filenames.txt` in parallel.
 
 ### Inference
 
-**Note**: At present, the only person who can access the s3 bucket (`s3://modwt-lstm-results`) is the author. This will change once a more permanent location is found for the results data.
+**Note**: The result data (`correct_output/`) is available upon request. Please contact John You at johnswyou@gmail.com.
 
-The `inference.py` script accesses trained models from an S3 bucket mounted locally:
+To make use of the trained outputs for streamflow forecasting, see the [wavelet-streamflow-forecast](https://github.com/johnswyou/wavelet-streamflow-forecast) repository.
+
+This repository also includes a legacy `inference.py` script that loads trained models from a local `correct_output/` directory:
 
 ```bash
-# Mount S3 bucket (modwt-lstm-results) to ../mnt
-# Then run inference
 python inference.py
 ```
 
-Results are organized in the S3 bucket as:
+Results are organized as:
 ```
-mnt/correct_output/
+correct_output/
 └── [STATION_ID]/
     └── leadtime_[1,3,5]/
         └── [WAVELET_FILTER]/
@@ -181,7 +181,7 @@ Each CSV file contains:
 
 ## Results Storage
 
-Trained models and results are stored in an S3 bucket (`modwt-lstm-results`) with the following structure:
+The result (stored in a directory called `correct_output`) has the following structure. This data is available upon request (see `docs/result_explanation.md` for full details).
 
 - Models (`.keras` files)
 - Scalers (`.pkl` files)
@@ -190,8 +190,6 @@ Trained models and results are stored in an S3 bucket (`modwt-lstm-results`) wit
 - Predictions and labels
 - Training histories
 - Timing information
-
-See `context/result_explanation.md` for detailed structure.
 
 ## License
 

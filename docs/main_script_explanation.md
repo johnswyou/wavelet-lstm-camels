@@ -18,7 +18,7 @@ Here's a step-by-step walkthrough:
 
 3.  **Argument Parsing (`parse_arguments` function):**
     *   This function defines and parses command-line arguments that control the script's behavior:
-        *   `--csv_filename`: (Required) Path to the input CSV file for a specific catchment. As per `context/data_outline.md`, these CSV files are expected to be in the `data/` directory and contain time-series data like streamflow (`Q`), precipitation, temperature, etc.
+        *   `--csv_filename`: (Required) Path to the input CSV file for a specific catchment. As per `docs/data_outline.md`, these CSV files are expected to be in the `data/` directory and contain time-series data like streamflow (`Q`), precipitation, temperature, etc.
         *   `--max_level`: (Optional, default: 6) Maximum decomposition level for the MODWT (Maximal Overlap Discrete Wavelet Transform).
         *   `--base_save_path`: (Optional, default: `/home/jswyou/scratch`) Base directory where all output (models, scalers, results) will be saved.
         *   `--base_csv_path`: (Optional, default: `/home/jswyou/projects/def-quiltyjo/jswyou/oct_2024/wavelet-lstm-camels/data`) Base directory where the CAMELS CSV data is stored.
@@ -36,7 +36,7 @@ Here's a step-by-step walkthrough:
         *   It checks if the input CSV file exists.
         *   It extracts a `catchment_id` from the CSV filename (e.g., "02096846" from `02096846_camels.csv`).
         *   It creates a subdirectory for this `catchment_id` under `args.base_save_path` if it doesn't exist.
-        *   A list of `possible_filters` (wavelet names like 'bl7', 'coif1', 'db1', etc.) is defined. These names correspond to the keys found in `filters/wavelet_dict.pkl` and `filters/scaling_dict.pkl` as described in `context/data_outline.md`, which store the wavelet and scaling filter coefficients.
+        *   A list of `possible_filters` (wavelet names like 'bl7', 'coif1', 'db1', etc.) is defined. These names correspond to the keys found in `filters/wavelet_dict.pkl` and `filters/scaling_dict.pkl` as described in `docs/data_outline.md`, which store the wavelet and scaling filter coefficients.
     *   **Outer Loops:** The script then enters nested loops:
         *   It iterates through `forecast_horizon` values: `[1, 3, 5]` (days).
         *   Inside that, it iterates through each `filter_shortname` from `possible_filters`.
@@ -139,7 +139,7 @@ For each combination of catchment, forecast horizon, and wavelet filter, the scr
 - `ea_cmi_tol_005_selected_feature_names.pkl` - Selected features for both models
 - `timings.pkl` - Timing information for different processing steps
 
-**Note**: The structure and content of the above files (specifically, the `.pkl` files shown above) are described in greater detail in `./context/result_explanation_1.md`.
+**Note**: The structure and content of the above files (specifically, the `.pkl` files shown above) are described in greater detail in `docs/result_explanation.md`.
 
 In summary, `main.py` automates a complex workflow for hydrological forecasting. For each specified catchment, forecast horizon, and wavelet type, it performs:
 1.  Data loading and extensive preprocessing.
