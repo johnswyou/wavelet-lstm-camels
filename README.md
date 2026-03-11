@@ -4,6 +4,8 @@
 
 This repository stores the codes used for my [Master's thesis](https://uwspace.uwaterloo.ca/items/d7edea16-7052-4316-a464-b5a714481dbe) at the University of Waterloo under [Dr. John Quilty's](https://uwaterloo.ca/civil-environmental-engineering/profile/jquilty) supervision. This repository is messy and contains research code (i.e., bad code). Enjoy!
 
+To make practical use of the trained outputs of my research, please see [this repository](https://github.com/johnswyou/wavelet-streamflow-forecast).
+
 ## Overview
 
 This repository contains the research code for training wavelet-enhanced LSTM models for streamflow forecasting using the CAMELS (Catchment Attributes and Meteorology for Large-sample Studies) dataset. The project investigates whether incorporating MODWT (Maximal Overlap Discrete Wavelet Transform) features improves LSTM-based streamflow forecasting performance across multiple catchments.
